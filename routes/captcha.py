@@ -6,11 +6,15 @@ from utils.captcha import generate_captcha
 
 captcha_bp = Blueprint("captcha", __name__)
 
+def generate_secure_captcha_text(length=6):
+    """Generate a random CAPTCHA text with uppercase letters and digits."""
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
+
 @captcha_bp.route("/captcha/generate", methods=["GET"])
 def get_captcha():
-    """Generate a new CAPTCHA image - intentionally simplified"""
+    """Generate a new secure CAPTCHA image"""
     
-    captcha_text = "12345"
+    captcha_text = generate_secure_captcha_text()
     
     session['captcha_text'] = captcha_text
     

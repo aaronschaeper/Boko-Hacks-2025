@@ -8,8 +8,8 @@ from extensions import db
 admin_bp = Blueprint("admin", __name__)
 
 DEFAULT_ADMIN = {
-    "username": "admin",
-    "password": "password"
+    "username": "complexusername",
+    "password": "complexpassword"
 }
 
 def init_admin_db():
