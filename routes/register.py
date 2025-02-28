@@ -1,9 +1,23 @@
 import re
-from flask import Blueprint, render_template, request, flash, redirect, url_for, session
+import requests
+from flask import Blueprint, render_template, request, flash, redirect, url_for
 from models.user import User
 from extensions import db
 
 register_bp = Blueprint("register", __name__)
+
+# Google reCAPTCHA Secret Key (Test key for development)
+RECAPTCHA_SECRET_KEY = "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe"
+
+def verify_recaptcha(response_token):
+    """Verify the reCAPTCHA response token with Google."""
+    url = "https://www.google.com/recaptcha/api/siteverify"
+    data = {
+        "secret": RECAPTCHA_SECRET_KEY,
+        "response": response_token
+    }
+    result = requests.post(url, data=data).json()
+    return result.get("success", False)
 
 def is_valid_password(password):
     """Check if the password meets security requirements."""
@@ -24,16 +38,12 @@ def register():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
-        captcha_response = request.form.get("captcha")
-        stored_captcha = session.get("captcha_text")
+        recaptcha_response = request.form.get("g-recaptcha-response")
 
-        # Validate CAPTCHA
-        if not stored_captcha or captcha_response.upper() != stored_captcha:
-            flash("Invalid CAPTCHA. Please try again.", "error")
+        # Validate reCAPTCHA
+        if not recaptcha_response or not verify_recaptcha(recaptcha_response):
+            flash("CAPTCHA verification failed. Please complete the reCAPTCHA.", "error")
             return redirect(url_for("register.register"))
-
-        # Clear CAPTCHA from session after validation
-        session.pop("captcha_text", None)
 
         # Validate username uniqueness
         if User.query.filter_by(username=username).first():
@@ -56,4 +66,3 @@ def register():
         return redirect(url_for("login.login"))
 
     return render_template("register.html")
-

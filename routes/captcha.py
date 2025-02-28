@@ -1,26 +1,41 @@
-from flask import Blueprint, send_file, session
-from io import BytesIO
-import random
-import string
-from utils.captcha import generate_captcha
+import requests
+from flask import Blueprint, request, jsonify, render_template, redirect, url_for, flash
 
-captcha_bp = Blueprint("captcha", __name__)
+register_bp = Blueprint("register", __name__)
 
-def generate_secure_captcha_text(length=6):
-    """Generate a random CAPTCHA text with uppercase letters and digits."""
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
+# Your Google reCAPTCHA Secret Key (Keep this secure)
+RECAPTCHA_SECRET_KEY = "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe"
 
-@captcha_bp.route("/captcha/generate", methods=["GET"])
-def get_captcha():
-    """Generate a new secure CAPTCHA image"""
-    
-    captcha_text = generate_secure_captcha_text()
-    
-    session['captcha_text'] = captcha_text
-    
-    image = generate_captcha(captcha_text)
-    img_io = BytesIO()
-    image.save(img_io, 'PNG')
-    img_io.seek(0)
-    
-    return send_file(img_io, mimetype='image/png')
+def verify_recaptcha(response):
+    """Verify the reCAPTCHA response token with Google."""
+    url = "https://www.google.com/recaptcha/api/siteverify"
+    data = {
+        "secret": RECAPTCHA_SECRET_KEY,
+        "response": response
+    }
+    result = requests.post(url, data=data).json()
+    return result.get("success", False)  # Returns True if valid
+
+@register_bp.route("/register", methods=["GET", "POST"])
+def register():
+    """Handle user registration with reCAPTCHA validation."""
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+        recaptcha_response = request.form.get("g-recaptcha-response")
+
+        # Check if reCAPTCHA token exists
+        if not recaptcha_response:
+            flash("CAPTCHA validation failed. Please complete the CAPTCHA.", "danger")
+            return redirect(url_for("register.register"))
+
+        # Validate reCAPTCHA with Google
+        if not verify_recaptcha(recaptcha_response):
+            flash("CAPTCHA verification failed. Try again.", "danger")
+            return redirect(url_for("register.register"))
+
+        # If CAPTCHA is valid, proceed with user registration logic
+        flash("Registration successful!", "success")
+        return redirect(url_for("login.login"))
+
+    return render_template("register.html")

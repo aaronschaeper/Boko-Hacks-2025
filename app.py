@@ -9,7 +9,7 @@ from routes.apps import apps_bp
 from routes.notes import notes_bp
 from routes.admin import admin_bp, init_admin_db
 from routes.files import files_bp
-from routes.captcha import captcha_bp
+#from routes.captcha import captcha_bp REMOVED DUE TO RECAPTCHA USAGE
 from routes.retirement import retirement_bp
 from routes.news import news_bp  # Import the new news blueprint
 from models.user import User
@@ -40,7 +40,7 @@ app.register_blueprint(apps_bp)
 app.register_blueprint(notes_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(files_bp)
-app.register_blueprint(captcha_bp)
+#app.register_blueprint(captcha_bp) REMOVED DUE TO RECAPTCHA USAGE
 app.register_blueprint(news_bp)
 app.register_blueprint(retirement_bp)  
 
