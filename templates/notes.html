@@ -19,24 +19,6 @@
         color: #666;
     }
 
-    .admin-notice {
-        background: #fffde7;
-        border: 1px solid #fff59d;
-        padding: 0.75rem;
-        margin-bottom: 1rem;
-        border-radius: 4px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .close-notice {
-        background: none;
-        border: none;
-        font-size: 1.2rem;
-        cursor: pointer;
-    }
-
     .notes-container {
         max-width: 800px;
         margin: 0 auto;
@@ -55,13 +37,6 @@
         border-radius: 4px;
         font-size: 0.8rem;
         font-weight: bold;
-    }
-
-    .format-hint {
-        font-size: 0.8rem;
-        color: #666;
-        margin-top: -0.5rem;
-        font-style: italic;
     }
 
     #note-form {
@@ -155,20 +130,14 @@
         
         <div class="notes-container">
             <div id="message-area"></div>
-            
-            <div class="admin-notice">
-                <strong>Notice for admin users:</strong> Database maintenance scheduled. Table structure: notes(id, title, content, created_at, user_id)
-                <button class="close-notice">×</button>
-            </div>
 
             <form id="note-form">
                 <div class="form-header">
                     <span class="form-title">Create New Note</span>
                     <span class="beta-tag">BETA</span>
                 </div>
-                <input type="text" name="title" id="note-title" placeholder="Enter title (supports custom formatting)" required>
-                <textarea name="content" id="note-content" placeholder="Enter your note content here. Pro tip: You can use special characters for formatting!" required></textarea>
-                <div class="format-hint">Need formatting help? Try using special characters!</div>
+                <input type="text" name="title" id="note-title" placeholder="Enter title" required>
+                <textarea name="content" id="note-content" placeholder="Enter your note content here." required></textarea>
                 <button type="submit">Save Note</button>
             </form>
 
@@ -201,13 +170,6 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Notes app initialized');
-            
-            const closeBtn = document.querySelector('.close-notice');
-            if (closeBtn) {
-                closeBtn.addEventListener('click', function() {
-                    document.querySelector('.admin-notice').style.display = 'none';
-                });
-            }
             
             const form = document.getElementById('note-form');
             if (form) {
