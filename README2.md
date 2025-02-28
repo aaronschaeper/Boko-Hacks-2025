@@ -8,6 +8,7 @@
 - **Google reCaptcha Admin Console**
 - **OWASP Top 10**
 - **Command Prompt** (using curl to check for vulnerabilities)
+- **Portswigger Academy**
 
 # Build and Run Instructions
 - All requirements are listed in the `requirements.txt` file.
