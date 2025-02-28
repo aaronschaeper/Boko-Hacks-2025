@@ -1,11 +1,26 @@
-from flask import Blueprint, render_template, request, jsonify, session
-from extensions import db
+import re
+import bleach
+from flask import Blueprint, render_template, request, flash, redirect, url_for, session, jsonify
 from models.user import User
 from models.note import Note
 from datetime import datetime
-from sqlalchemy import text
+from extensions import db
 
 notes_bp = Blueprint('notes', __name__, url_prefix='/apps/notes')
+
+def is_valid_password(password):
+    """Check if the password meets security requirements."""
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long."
+    if not re.search(r"[A-Z]", password):
+        return False, "Password must contain at least one uppercase letter."
+    if not re.search(r"[a-z]", password):
+        return False, "Password must contain at least one lowercase letter."
+    if not re.search(r"\d", password):
+        return False, "Password must contain at least one number."
+    if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+        return False, "Password must contain at least one special character."
+    return True, ""
 
 @notes_bp.route('/')
 def notes():
@@ -23,7 +38,7 @@ def notes():
 
 @notes_bp.route('/create', methods=['POST'])
 def create_note():
-    """Create a new note securely."""
+    """Create a new note securely with sanitization to prevent XSS."""
     if 'user' not in session:
         return jsonify({'success': False, 'error': 'Not logged in'}), 401
 
@@ -37,10 +52,17 @@ def create_note():
     if not title or not content:
         return jsonify({'success': False, 'error': 'Title and content are required'}), 400
 
+    # Sanitize user input using bleach
+    # In this example, no HTML tags are allowed.
+    allowed_tags = []   # Change this list if you want to allow specific formatting tags.
+    allowed_attrs = {}
+    clean_title = bleach.clean(title, tags=allowed_tags, attributes=allowed_attrs, strip=True)
+    clean_content = bleach.clean(content, tags=allowed_tags, attributes=allowed_attrs, strip=True)
+
     try:
         note = Note(
-            title=title,
-            content=content,
+            title=clean_title,
+            content=clean_content,
             created_at=datetime.now(),
             user_id=current_user.id
         )
@@ -60,7 +82,7 @@ def create_note():
         })
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An error occurred while saving the note.'}), 500
 
 @notes_bp.route('/search')
 def search_notes():
@@ -78,9 +100,10 @@ def search_notes():
         return jsonify({'success': True, 'notes': []})
 
     try:
+        pattern = "%" + query + "%"
         user_notes = Note.query.filter(
             Note.user_id == current_user.id,
-            (Note.title.ilike(f'%{query}%')) | (Note.content.ilike(f'%{query}%'))
+            (Note.title.ilike(pattern)) | (Note.content.ilike(pattern))
         ).order_by(Note.created_at.desc()).all()
 
         notes = [{
@@ -93,7 +116,7 @@ def search_notes():
 
         return jsonify({'success': True, 'notes': notes})
     except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An error occurred during the search.'}), 500
 
 @notes_bp.route('/delete/<int:note_id>', methods=['DELETE'])
 def delete_note(note_id):
@@ -117,4 +140,4 @@ def delete_note(note_id):
         return jsonify({'success': True, 'message': 'Note deleted successfully'})
     except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'An error occurred while deleting the note.'}), 500
